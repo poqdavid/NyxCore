@@ -87,8 +87,8 @@ dependencies {
 
     compile("javax.validation:validation-api:${getProjectProperty('validation')}")
     compile group: 'commons-io', name: 'commons-io', version: '2.6'
-    compile group: 'org.bstats', name: 'bstats-sponge', version: '1.7'
-    shadow group: 'org.bstats', name: 'bstats-sponge', version: '1.7'
+    compile group: 'org.bstats', name: 'bstats-sponge', version: '2.2.1'
+    shadow group: 'org.bstats', name: 'bstats-sponge', version: '2.2.1'
 }
 
 jar {

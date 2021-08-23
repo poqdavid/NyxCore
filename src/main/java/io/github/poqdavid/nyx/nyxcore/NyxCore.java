@@ -14,7 +14,7 @@
  *     You should have received a copy of the GNU General Public License
  *     along with NyxCore.  If not, see <https://www.gnu.org/licenses/>.
  *
- *     Copyright (c) POQDavid <https://github.com/poqdavid>
+ *     Copyright (c) POQDavid <https://github.com/poqdavid/NyxCore>
  *     Copyright (c) contributors
  */
 
@@ -24,7 +24,7 @@ import com.google.inject.Inject;
 import io.github.poqdavid.nyx.nyxcore.Permissions.BackpackPermission;
 import io.github.poqdavid.nyx.nyxcore.Utils.CText;
 import io.github.poqdavid.nyx.nyxcore.Utils.NCLogger;
-import org.bstats.sponge.Metrics2;
+import org.bstats.sponge.Metrics;
 import org.slf4j.Logger;
 import org.spongepowered.api.Game;
 import org.spongepowered.api.Sponge;
@@ -55,7 +55,7 @@ public class NyxCore {
     private final Path toolsDir;
     private final Path backpacksDir;
     private final PluginContainer pluginContainer;
-    private final Metrics2 metrics;
+    private final Metrics metrics;
     public NCLogger logger;
     public PermissionService permservice;
     public PermissionDescription.Builder permdescbuilder;
@@ -65,7 +65,7 @@ public class NyxCore {
     private CommandManager cmdManager;
 
     @Inject
-    public NyxCore(Metrics2.Factory metricsFactory, @ConfigDir(sharedRoot = true) Path path, Logger logger, PluginContainer container) {
+    public NyxCore(Metrics.Factory metricsFactory, @ConfigDir(sharedRoot = true) Path path, Logger logger, PluginContainer container) {
         nyxcore = this;
         this.dataDir = Sponge.getGame().getSavesDirectory().resolve(PluginData.id);
         this.pluginContainer = container;

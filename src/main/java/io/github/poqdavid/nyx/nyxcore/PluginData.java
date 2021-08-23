@@ -14,7 +14,7 @@
  *     You should have received a copy of the GNU General Public License
  *     along with NyxCore.  If not, see <https://www.gnu.org/licenses/>.
  *
- *     Copyright (c) POQDavid <https://github.com/poqdavid>
+ *     Copyright (c) POQDavid <https://github.com/poqdavid/NyxCore>
  *     Copyright (c) contributors
  */
 
@@ -25,8 +25,8 @@ public class PluginData {
     public static final String name = "NyxCore";
     public static final String shortName = "Nyx";
     public static final String version = "1.0";
-    public static final String description = "Core plugin for rest of the Nyx plugins.";
+    public static final String description = "Core plugin for all of my Nyx plugins.";
     public static final String organization = "POQDavid";
     public static final String author1 = "POQDavid";
-    public static final String url = "https://github.com/poqdavid";
+    public static final String url = "https://github.com/poqdavid/NyxCore";
 }

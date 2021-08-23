@@ -1,7 +1,9 @@
 # NyxCore
-Core plugin for rest of the Nyx plugins.
+Core plugin for all of my Nyx plugins.
 
 ----------
+
+This plugin uses bStats I would really appreciate it if you guys allow data collection by running `/sponge metrics NyxCore enable`
 
 **Donate:**
 <br/>**BTC Legacy:** 1Q2JQG3iCLZPT2iJfDLow1oQVGKmxheoAh

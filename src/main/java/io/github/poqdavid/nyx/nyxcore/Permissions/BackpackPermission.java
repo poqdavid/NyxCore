@@ -14,7 +14,7 @@
  *     You should have received a copy of the GNU General Public License
  *     along with NyxCore.  If not, see <https://www.gnu.org/licenses/>.
  *
- *     Copyright (c) POQDavid <https://github.com/poqdavid>
+ *     Copyright (c) POQDavid <https://github.com/poqdavid/NyxCore>
  *     Copyright (c) contributors
  */
 
