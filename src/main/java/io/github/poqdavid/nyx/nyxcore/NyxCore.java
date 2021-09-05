@@ -22,8 +22,10 @@ package io.github.poqdavid.nyx.nyxcore;
 
 import com.google.inject.Inject;
 import io.github.poqdavid.nyx.nyxcore.Permissions.BackpackPermission;
+import io.github.poqdavid.nyx.nyxcore.Permissions.ToolsPermission;
 import io.github.poqdavid.nyx.nyxcore.Utils.CText;
 import io.github.poqdavid.nyx.nyxcore.Utils.NCLogger;
+import io.github.poqdavid.nyx.nyxcore.Utils.Setting.NyxTools.Settings;
 import org.bstats.sponge.Metrics;
 import org.slf4j.Logger;
 import org.spongepowered.api.Game;
@@ -35,6 +37,7 @@ import org.spongepowered.api.event.game.state.GameInitializationEvent;
 import org.spongepowered.api.event.game.state.GamePreInitializationEvent;
 import org.spongepowered.api.plugin.Plugin;
 import org.spongepowered.api.plugin.PluginContainer;
+import org.spongepowered.api.service.ProviderRegistration;
 import org.spongepowered.api.service.permission.PermissionDescription;
 import org.spongepowered.api.service.permission.PermissionService;
 import org.spongepowered.api.text.Text;
@@ -43,13 +46,14 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Optional;
 
 @Plugin(id = PluginData.id, name = PluginData.name, version = PluginData.version, description = PluginData.description, url = PluginData.url, authors = {PluginData.author1})
 public class NyxCore {
 
     public static NyxCore nyxcore;
-    private final Path configdirpath;
-    private final Path configfullpath;
+    private final Path configDirPath;
+    private final Path configFullPath;
     private final Path dataDir;
     private final Path backpackDir;
     private final Path toolsDir;
@@ -57,9 +61,10 @@ public class NyxCore {
     private final PluginContainer pluginContainer;
     private final Metrics metrics;
     public NCLogger logger;
-    public PermissionService permservice;
-    public PermissionDescription.Builder permdescbuilder;
+    public PermissionService permService;
+    public PermissionDescription.Builder permDescBuilder;
     public Path recordsDir;
+    public Settings nytSettings;
     @Inject
     private Game game;
     private CommandManager cmdManager;
@@ -70,14 +75,20 @@ public class NyxCore {
         this.dataDir = Sponge.getGame().getSavesDirectory().resolve(PluginData.id);
         this.pluginContainer = container;
         this.logger = new NCLogger();
-        this.configdirpath = path.resolve(PluginData.shortName);
-        this.configfullpath = Paths.get(this.getConfigPath().toString(), "config.json");
+        this.nytSettings = new Settings();
+        this.configDirPath = path.resolve(PluginData.shortName);
+        this.configFullPath = Paths.get(this.getConfigPath().toString(), "config.json");
         this.backpackDir = Paths.get(this.getConfigPath().toString(), "NyxBackpack");
         this.toolsDir = Paths.get(this.getConfigPath().toString(), "NyxTools");
         this.backpacksDir = Paths.get(this.backpackDir.toString(), "backpacks");
 
-        int pluginId = 12556;
-        metrics = metricsFactory.make(pluginId);
+
+        this.logger.info(" ");
+        this.logger.info(CText.get(CText.Colors.MAGENTA, 0, "NyxCore") + CText.get(CText.Colors.YELLOW, 0, " v" + PluginData.version));
+        this.logger.info("Starting...");
+        this.logger.info(" ");
+
+        metrics = metricsFactory.make(12556);
     }
 
 
@@ -88,7 +99,7 @@ public class NyxCore {
 
     @Nonnull
     public Path getConfigPath() {
-        return this.configdirpath;
+        return this.configDirPath;
     }
 
     @Nonnull
@@ -117,6 +128,11 @@ public class NyxCore {
     }
 
     @Nonnull
+    public Settings getToolsSettings() {
+        return this.nytSettings;
+    }
+
+    @Nonnull
     public NCLogger getLogger(String name) {
         if (name == null || name.isEmpty()) {
             return this.logger;
@@ -141,49 +157,56 @@ public class NyxCore {
         this.logger.info(CText.get(CText.Colors.MAGENTA, 0, "NyxCore") + CText.get(CText.Colors.YELLOW, 0, " v" + PluginData.version));
         this.logger.info("Initializing...");
         this.logger.info(" ");
-
+        nyxcore = this;
     }
 
     @Listener
     public void onGameInit(@Nullable final GameInitializationEvent event) {
-        if (Sponge.getServiceManager().getRegistration(PermissionService.class).get().getPlugin().getId().equalsIgnoreCase("sponge")) {
-            this.logger.error("Unable to initialize plugin. VirtualTool requires a PermissionService like  LuckPerms, PEX, PermissionsManager.");
+        Optional<ProviderRegistration<PermissionService>> pServiceReg = Sponge.getServiceManager().getRegistration(PermissionService.class);
+        if (pServiceReg.isPresent()) {
+            if (pServiceReg.get().getPlugin().getId().equalsIgnoreCase("sponge")) {
+                this.logger.error("Unable to initialize plugin. NyxCore requires a PermissionService like  LuckPerms, PEX, PermissionsManager.");
+                return;
+            }
+        } else {
+            this.logger.error("Unable to initialize plugin. NyxCore requires a PermissionService like  LuckPerms, PEX, PermissionsManager.");
             return;
         }
 
-        if (this.permdescbuilder != null) {
-            this.permdescbuilder = this.permservice.newDescriptionBuilder(this.getPluginContainer());
+
+        if (this.permDescBuilder != null) {
+            this.permDescBuilder = this.permService.newDescriptionBuilder(this.getPluginContainer());
 
             //Backpack commands
-            this.permdescbuilder
+            this.permDescBuilder
                     .id(BackpackPermission.COMMAND_BACKPACK_HELP)
-                    .description(Text.of("Allows the use of /vt help"))
+                    .description(Text.of("Allows the use of /bp help"))
                     .assign(PermissionDescription.ROLE_USER, true)
                     .assign(PermissionDescription.ROLE_STAFF, true)
                     .assign(PermissionDescription.ROLE_ADMIN, true)
                     .register();
-            this.permdescbuilder
+            this.permDescBuilder
                     .id(BackpackPermission.COMMAND_BACKPACK_MAIN)
                     .description(Text.of("Allows the use of /backpack, /bp"))
                     .assign(PermissionDescription.ROLE_USER, true)
                     .assign(PermissionDescription.ROLE_STAFF, true)
                     .assign(PermissionDescription.ROLE_ADMIN, true)
                     .register();
-            this.permdescbuilder
+            this.permDescBuilder
                     .id(BackpackPermission.COMMAND_BACKPACKLOCK)
                     .description(Text.of("Allows the use of /backpacklock, /bplock"))
                     .assign(PermissionDescription.ROLE_USER, false)
                     .assign(PermissionDescription.ROLE_STAFF, false)
                     .assign(PermissionDescription.ROLE_ADMIN, true)
                     .register();
-            this.permdescbuilder
+            this.permDescBuilder
                     .id(BackpackPermission.COMMAND_BACKPACK_ADMIN_READ)
                     .description(Text.of("Allows to read content of other backpacks"))
                     .assign(PermissionDescription.ROLE_USER, false)
                     .assign(PermissionDescription.ROLE_STAFF, false)
                     .assign(PermissionDescription.ROLE_ADMIN, false)
                     .register();
-            this.permdescbuilder
+            this.permDescBuilder
                     .id(BackpackPermission.COMMAND_BACKPACK_ADMIN_MODIFY)
                     .description(Text.of("Allows to modify other backpacks"))
                     .assign(PermissionDescription.ROLE_USER, false)
@@ -192,42 +215,42 @@ public class NyxCore {
                     .register();
 
             //Backpack sizes
-            this.permdescbuilder
+            this.permDescBuilder
                     .id(BackpackPermission.COMMAND_BACKPACK_SIZE_ONE)
                     .description(Text.of("Sets users backpack size to 1 row"))
                     .assign(PermissionDescription.ROLE_USER, true)
                     .assign(PermissionDescription.ROLE_STAFF, false)
                     .assign(PermissionDescription.ROLE_ADMIN, false)
                     .register();
-            this.permdescbuilder
+            this.permDescBuilder
                     .id(BackpackPermission.COMMAND_BACKPACK_SIZE_TWO)
                     .description(Text.of("Sets users backpack size to 2 row"))
                     .assign(PermissionDescription.ROLE_USER, false)
                     .assign(PermissionDescription.ROLE_STAFF, false)
                     .assign(PermissionDescription.ROLE_ADMIN, false)
                     .register();
-            this.permdescbuilder
+            this.permDescBuilder
                     .id(BackpackPermission.COMMAND_BACKPACK_SIZE_THREE)
                     .description(Text.of("Sets users backpack size to 3 row"))
                     .assign(PermissionDescription.ROLE_USER, false)
                     .assign(PermissionDescription.ROLE_STAFF, false)
                     .assign(PermissionDescription.ROLE_ADMIN, false)
                     .register();
-            this.permdescbuilder
+            this.permDescBuilder
                     .id(BackpackPermission.COMMAND_BACKPACK_SIZE_FOUR)
                     .description(Text.of("Sets users backpack size to 4 row"))
                     .assign(PermissionDescription.ROLE_USER, false)
                     .assign(PermissionDescription.ROLE_STAFF, false)
                     .assign(PermissionDescription.ROLE_ADMIN, false)
                     .register();
-            this.permdescbuilder
+            this.permDescBuilder
                     .id(BackpackPermission.COMMAND_BACKPACK_SIZE_FIVE)
                     .description(Text.of("Sets users backpack size to 5 row"))
                     .assign(PermissionDescription.ROLE_USER, false)
                     .assign(PermissionDescription.ROLE_STAFF, false)
                     .assign(PermissionDescription.ROLE_ADMIN, false)
                     .register();
-            this.permdescbuilder
+            this.permDescBuilder
                     .id(BackpackPermission.COMMAND_BACKPACK_SIZE_SIX)
                     .description(Text.of("Sets users backpack size to 6 row"))
                     .assign(PermissionDescription.ROLE_USER, false)
@@ -235,9 +258,164 @@ public class NyxCore {
                     .assign(PermissionDescription.ROLE_ADMIN, true)
                     .register();
 
-        }
+            //Backpack commands
+            this.permDescBuilder
+                    .id(ToolsPermission.COMMAND_MAIN)
+                    .description(Text.of("Allows the use of /nyxtools, /nyt"))
+                    .assign(PermissionDescription.ROLE_USER, true)
+                    .assign(PermissionDescription.ROLE_STAFF, true)
+                    .assign(PermissionDescription.ROLE_ADMIN, true)
+                    .register();
+            this.permDescBuilder
+                    .id(ToolsPermission.COMMAND_HELP)
+                    .description(Text.of("Allows the use of help command"))
+                    .assign(PermissionDescription.ROLE_USER, true)
+                    .assign(PermissionDescription.ROLE_STAFF, true)
+                    .assign(PermissionDescription.ROLE_ADMIN, true)
+                    .register();
+            this.permDescBuilder
+                    .id(ToolsPermission.COMMAND_ANVIL)
+                    .description(Text.of("Allows the use of /anvil, /av"))
+                    .assign(PermissionDescription.ROLE_USER, false)
+                    .assign(PermissionDescription.ROLE_STAFF, true)
+                    .assign(PermissionDescription.ROLE_ADMIN, true)
+                    .register();
+            this.permDescBuilder
+                    .id(ToolsPermission.COMMAND_ENCHANTINGTABLE)
+                    .description(Text.of("Allows the use of /enchantingtable, /et"))
+                    .assign(PermissionDescription.ROLE_USER, false)
+                    .assign(PermissionDescription.ROLE_STAFF, true)
+                    .assign(PermissionDescription.ROLE_ADMIN, true)
+                    .register();
+            this.permDescBuilder
+                    .id(ToolsPermission.COMMAND_ENDERCHEST)
+                    .description(Text.of("Allows the use of /enderchest, /ec"))
+                    .assign(PermissionDescription.ROLE_USER, false)
+                    .assign(PermissionDescription.ROLE_STAFF, true)
+                    .assign(PermissionDescription.ROLE_ADMIN, true)
+                    .register();
+            this.permDescBuilder
+                    .id(ToolsPermission.COMMAND_WORKBENCH)
+                    .description(Text.of("Allows the use of /workbench, /wb"))
+                    .assign(PermissionDescription.ROLE_USER, false)
+                    .assign(PermissionDescription.ROLE_STAFF, true)
+                    .assign(PermissionDescription.ROLE_ADMIN, true)
+                    .register();
 
-        //this.settings.Load(this.configfullpath, this);
+            //Enchantment powers
+            this.permDescBuilder
+                    .id(ToolsPermission.COMMAND_ENCHANTINGTABLE_POWER_0)
+                    .description(Text.of("Sets enchanting table's power to 0"))
+                    .assign(PermissionDescription.ROLE_USER, false)
+                    .assign(PermissionDescription.ROLE_STAFF, false)
+                    .assign(PermissionDescription.ROLE_ADMIN, false)
+                    .register();
+            this.permDescBuilder
+                    .id(ToolsPermission.COMMAND_ENCHANTINGTABLE_POWER_1)
+                    .description(Text.of("Sets enchanting table's power to 1"))
+                    .assign(PermissionDescription.ROLE_USER, false)
+                    .assign(PermissionDescription.ROLE_STAFF, false)
+                    .assign(PermissionDescription.ROLE_ADMIN, false)
+                    .register();
+            this.permDescBuilder
+                    .id(ToolsPermission.COMMAND_ENCHANTINGTABLE_POWER_2)
+                    .description(Text.of("Sets enchanting table's power to 2"))
+                    .assign(PermissionDescription.ROLE_USER, false)
+                    .assign(PermissionDescription.ROLE_STAFF, false)
+                    .assign(PermissionDescription.ROLE_ADMIN, false)
+                    .register();
+            this.permDescBuilder
+                    .id(ToolsPermission.COMMAND_ENCHANTINGTABLE_POWER_3)
+                    .description(Text.of("Sets enchanting table's power to 3"))
+                    .assign(PermissionDescription.ROLE_USER, false)
+                    .assign(PermissionDescription.ROLE_STAFF, false)
+                    .assign(PermissionDescription.ROLE_ADMIN, false)
+                    .register();
+            this.permDescBuilder
+                    .id(ToolsPermission.COMMAND_ENCHANTINGTABLE_POWER_4)
+                    .description(Text.of("Sets enchanting table's power to 4"))
+                    .assign(PermissionDescription.ROLE_USER, false)
+                    .assign(PermissionDescription.ROLE_STAFF, false)
+                    .assign(PermissionDescription.ROLE_ADMIN, false)
+                    .register();
+            this.permDescBuilder
+                    .id(ToolsPermission.COMMAND_ENCHANTINGTABLE_POWER_5)
+                    .description(Text.of("Sets enchanting table's power to 5"))
+                    .assign(PermissionDescription.ROLE_USER, false)
+                    .assign(PermissionDescription.ROLE_STAFF, false)
+                    .assign(PermissionDescription.ROLE_ADMIN, false)
+                    .register();
+            this.permDescBuilder
+                    .id(ToolsPermission.COMMAND_ENCHANTINGTABLE_POWER_6)
+                    .description(Text.of("Sets enchanting table's power to 6"))
+                    .assign(PermissionDescription.ROLE_USER, false)
+                    .assign(PermissionDescription.ROLE_STAFF, false)
+                    .assign(PermissionDescription.ROLE_ADMIN, false)
+                    .register();
+            this.permDescBuilder
+                    .id(ToolsPermission.COMMAND_ENCHANTINGTABLE_POWER_7)
+                    .description(Text.of("Sets enchanting table's power to 7"))
+                    .assign(PermissionDescription.ROLE_USER, false)
+                    .assign(PermissionDescription.ROLE_STAFF, false)
+                    .assign(PermissionDescription.ROLE_ADMIN, false)
+                    .register();
+            this.permDescBuilder
+                    .id(ToolsPermission.COMMAND_ENCHANTINGTABLE_POWER_8)
+                    .description(Text.of("Sets enchanting table's power to 8"))
+                    .assign(PermissionDescription.ROLE_USER, false)
+                    .assign(PermissionDescription.ROLE_STAFF, false)
+                    .assign(PermissionDescription.ROLE_ADMIN, false)
+                    .register();
+            this.permDescBuilder
+                    .id(ToolsPermission.COMMAND_ENCHANTINGTABLE_POWER_9)
+                    .description(Text.of("Sets enchanting table's power to 9"))
+                    .assign(PermissionDescription.ROLE_USER, false)
+                    .assign(PermissionDescription.ROLE_STAFF, false)
+                    .assign(PermissionDescription.ROLE_ADMIN, false)
+                    .register();
+            this.permDescBuilder
+                    .id(ToolsPermission.COMMAND_ENCHANTINGTABLE_POWER_10)
+                    .description(Text.of("Sets enchanting table's power to 10"))
+                    .assign(PermissionDescription.ROLE_USER, false)
+                    .assign(PermissionDescription.ROLE_STAFF, false)
+                    .assign(PermissionDescription.ROLE_ADMIN, false)
+                    .register();
+            this.permDescBuilder
+                    .id(ToolsPermission.COMMAND_ENCHANTINGTABLE_POWER_11)
+                    .description(Text.of("Sets enchanting table's power to 11"))
+                    .assign(PermissionDescription.ROLE_USER, false)
+                    .assign(PermissionDescription.ROLE_STAFF, false)
+                    .assign(PermissionDescription.ROLE_ADMIN, false)
+                    .register();
+            this.permDescBuilder
+                    .id(ToolsPermission.COMMAND_ENCHANTINGTABLE_POWER_12)
+                    .description(Text.of("Sets enchanting table's power to 12"))
+                    .assign(PermissionDescription.ROLE_USER, false)
+                    .assign(PermissionDescription.ROLE_STAFF, false)
+                    .assign(PermissionDescription.ROLE_ADMIN, false)
+                    .register();
+            this.permDescBuilder
+                    .id(ToolsPermission.COMMAND_ENCHANTINGTABLE_POWER_13)
+                    .description(Text.of("Sets enchanting table's power to 13"))
+                    .assign(PermissionDescription.ROLE_USER, false)
+                    .assign(PermissionDescription.ROLE_STAFF, false)
+                    .assign(PermissionDescription.ROLE_ADMIN, false)
+                    .register();
+            this.permDescBuilder
+                    .id(ToolsPermission.COMMAND_ENCHANTINGTABLE_POWER_14)
+                    .description(Text.of("Sets enchanting table's power to 14"))
+                    .assign(PermissionDescription.ROLE_USER, false)
+                    .assign(PermissionDescription.ROLE_STAFF, false)
+                    .assign(PermissionDescription.ROLE_ADMIN, false)
+                    .register();
+            this.permDescBuilder
+                    .id(ToolsPermission.COMMAND_ENCHANTINGTABLE_POWER_15)
+                    .description(Text.of("Sets enchanting table's power to 15"))
+                    .assign(PermissionDescription.ROLE_USER, true)
+                    .assign(PermissionDescription.ROLE_STAFF, true)
+                    .assign(PermissionDescription.ROLE_ADMIN, true)
+                    .register();
+        }
 
         this.logger.info("Plugin Initialized successfully!");
     }

@@ -20,7 +20,10 @@
 
 package io.github.poqdavid.nyx.nyxcore.Utils;
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import io.github.poqdavid.nyx.nyxcore.NyxCore;
+import io.github.poqdavid.nyx.nyxcore.Utils.Setting.NyxTools.Settings;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.EntityPlayerMP;
 import org.spongepowered.api.Server;
@@ -29,6 +32,7 @@ import org.spongepowered.api.command.CommandSource;
 import org.spongepowered.api.data.DataContainer;
 import org.spongepowered.api.data.persistence.DataFormats;
 import org.spongepowered.api.entity.living.player.Player;
+import org.spongepowered.api.entity.living.player.User;
 import org.spongepowered.api.event.cause.Cause;
 import org.spongepowered.api.item.inventory.ItemStack;
 import org.spongepowered.api.item.inventory.property.SlotPos;
@@ -61,6 +65,7 @@ public class Tools {
                         filew.close();
                     } catch (IOException e) {
                         e.printStackTrace();
+                        NyxCore.getInstance().getLogger(null).error(e.getMessage(), e);
                         return false;
                     }
                 }
@@ -75,6 +80,7 @@ public class Tools {
                 }
             } catch (IOException e) {
                 e.printStackTrace();
+                NyxCore.getInstance().getLogger(null).error(e.getMessage(), e);
                 return false;
             }
         }
@@ -82,8 +88,8 @@ public class Tools {
         return true;
     }
 
-    public static SlotPos IndxToSP(Integer indx) {
-        switch (indx) {
+    public static SlotPos indexToSP(Integer index) {
+        switch (index) {
             case 0:
                 return SlotPos.of(0, 0);
             case 1:
@@ -201,8 +207,6 @@ public class Tools {
             default:
                 return null;
         }
-
-
     }
 
     public static void MakeNewBP(Player player) {
@@ -247,48 +251,47 @@ public class Tools {
         }
     }
 
-    public static Player getPlayer(CommandSource src, NyxCore plugin) {
+    public static Player getPlayer(CommandSource src, Server server) {
+        return server.getPlayer(((Player) src).getUniqueId()).orElse(null);
+    }
 
-        final Server server = plugin.getGame().getServer();
-        return server.getPlayer(((Player) src.getCommandSource().get()).getUniqueId()).get();
+    public static Player getPlayer(CommandSource src) {
+        return ((Player) src);
     }
 
     public static Player getPlayer(EntityPlayer entityHuman) {
-        final Server server = NyxCore.getInstance().getGame().getServer();
-        return server.getPlayer(((Player) entityHuman).getUniqueId()).get();
+        return ((Player) entityHuman);
+    }
+
+    public static EntityPlayerMP getPlayerE(CommandSource src, Server server) {
+        return (EntityPlayerMP) server.getPlayer(((Player) src).getUniqueId()).orElse(null);
     }
 
     public static EntityPlayerMP getPlayerE(CommandSource src) {
         final Server server = NyxCore.getInstance().getGame().getServer();
-        return (EntityPlayerMP) server.getPlayer(((Player) src.getCommandSource().get()).getUniqueId()).get();
+        return (EntityPlayerMP) server.getPlayer(((Player) src).getUniqueId()).orElse(null);
     }
 
     public static Optional<Player> getPlayer(Cause cause) {
-        final Optional<Player> player = cause.first(Player.class);
-        return player;
+        return cause.first(Player.class);
     }
 
-    public static Player getPlayer(CommandSource src) {
-        final Server server = NyxCore.getInstance().getGame().getServer();
-        return server.getPlayer(((Player) src.getCommandSource().get()).getUniqueId()).get();
-    }
-
-    public static boolean lockbackpack(Player player, boolean log) {
-        if (WriteFile(Paths.get(NyxCore.getInstance().getBackpacksPath() + File.separator + player.getUniqueId() + ".lock").toFile(), "lock")) {
+    public static boolean lockBackpack(User user, boolean log) {
+        if (WriteFile(Paths.get(NyxCore.getInstance().getBackpacksPath() + File.separator + user.getUniqueId() + ".lock").toFile(), "lock")) {
             if (log) {
-                NyxCore.getInstance().getLogger(null).info(player.getName() + " backpack's locked");
+                NyxCore.getInstance().getLogger(null).info(user.getName() + " backpack's locked");
             }
             return true;
         } else {
             if (log) {
-                NyxCore.getInstance().getLogger(null).error(player.getName() + " backpack's is locked or failed getting locked");
+                NyxCore.getInstance().getLogger(null).error(user.getName() + " backpack's is locked or failed getting locked");
             }
             return false;
         }
     }
 
-    public static boolean unlockbackpack(Player player, boolean log) {
-        Path file = Paths.get(NyxCore.getInstance().getBackpacksPath() + File.separator + player.getUniqueId() + ".lock");
+    public static boolean unlockBackpack(User user, boolean log) {
+        Path file = Paths.get(NyxCore.getInstance().getBackpacksPath() + File.separator + user.getUniqueId() + ".lock");
         File f = new File(file.toString());
         if (f.isFile()) {
             if (f.exists()) {
@@ -317,12 +320,12 @@ public class Tools {
         }
     }
 
-    public static Boolean backpackchecklock(Player player) throws CommandException {
-        final Path file = Paths.get(NyxCore.getInstance().getBackpacksPath() + File.separator + player.getUniqueId() + ".lock");
+    public static Boolean backpackCheckLock(User user) throws CommandException {
+        final Path file = Paths.get(NyxCore.getInstance().getBackpacksPath() + File.separator + user.getUniqueId() + ".lock");
         return Files.exists(file);
     }
 
-    public static void Backpack_unlockall() {
+    public static void backpackUnlockAll() {
         try {
             File[] files = new File(NyxCore.getInstance().getBackpacksPath().toString()).listFiles((dir, name) -> name.endsWith(".lock"));
             if (files != null) {
@@ -341,5 +344,47 @@ public class Tools {
         } catch (Exception e) {
             e.printStackTrace();
         }
+    }
+
+    public static void saveToJson(Path file, Settings jsonob) {
+        Gson gson = new GsonBuilder().setPrettyPrinting().disableHtmlEscaping().create();
+
+        if (jsonob == null) {
+            WriteFile(file.toFile(), "{}");
+        } else {
+            WriteFile(file.toFile(), gson.toJson(jsonob, jsonob.getClass()));
+        }
+    }
+
+    public static Settings loadFromJson(Path file, Settings defob) {
+
+        if (!Files.exists(file)) {
+            try {
+                saveToJson(file, defob);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+
+        Gson gson = new Gson();
+        Settings out = null;
+        BufferedReader br = null;
+
+        try {
+            br = new BufferedReader(new FileReader(file.toString()));
+            out = gson.fromJson(br, defob.getClass());
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        } finally {
+            if (br != null) {
+                try {
+                    br.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+
+        return out;
     }
 }

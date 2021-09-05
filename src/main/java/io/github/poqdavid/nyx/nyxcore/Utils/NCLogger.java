@@ -37,7 +37,6 @@ public class NCLogger {
         this.LoggerName = this.logger.getName();
     }
 
-
     public void info(String msg) {
         this.logger.info(CText.get(CText.Colors.YELLOW, 0, msg));
     }

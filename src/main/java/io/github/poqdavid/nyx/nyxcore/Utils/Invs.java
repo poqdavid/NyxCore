@@ -20,12 +20,10 @@
 
 package io.github.poqdavid.nyx.nyxcore.Utils;
 
-import io.github.poqdavid.nyx.nyxcore.NyxCore;
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.inventory.Container;
 import net.minecraft.network.play.server.SPacketOpenWindow;
 import net.minecraft.util.text.TextComponentString;
-import org.spongepowered.api.Game;
 import org.spongepowered.api.command.CommandResult;
 import org.spongepowered.api.command.CommandSource;
 import org.spongepowered.api.command.args.CommandContext;
@@ -35,40 +33,54 @@ import org.spongepowered.api.item.inventory.InventoryArchetype;
 import org.spongepowered.api.item.inventory.property.InventoryTitle;
 import org.spongepowered.api.text.Text;
 
+import java.util.Objects;
+
 
 public class Invs {
-    private final Game game;
-    private final NyxCore plugin;
+    private final Object plugin;
 
-    public Invs(Game game, NyxCore plugin) {
-        this.game = game;
+    public Invs(Object plugin) {
         this.plugin = plugin;
     }
 
-    public CommandResult Open(CommandSource src, CommandContext args, InventoryArchetype invArch, Text inventorytitle) {
-        final Inventory invx = Inventory.builder().of(invArch)
-                .property(InventoryTitle.PROPERTY_NAME, new InventoryTitle(inventorytitle))
+    public CommandResult Open(CommandSource src, CommandContext args, InventoryArchetype invArch, Text inventoryTitle) {
+        final Inventory inv = Inventory.builder().of(invArch)
+                .property(InventoryTitle.PROPERTY_NAME, new InventoryTitle(inventoryTitle))
                 .build(plugin);
-        return this.Open(src, args, invx);
+        return this.Open(src, args, inv);
 
     }
 
+    public CommandResult Open(CommandSource src, InventoryArchetype invArch, Text inventoryTitle) {
+        final Inventory inv = Inventory.builder().of(invArch)
+                .property(InventoryTitle.PROPERTY_NAME, new InventoryTitle(inventoryTitle))
+                .build(plugin);
+        return this.Open(src, inv);
+    }
+
+    public CommandResult Open(CommandSource src, Inventory inv, InventoryArchetype invArch, Text inventoryTitle) {
+        final Inventory invX = Inventory.builder().from(inv).of(invArch)
+                .property(InventoryTitle.PROPERTY_NAME, new InventoryTitle(inventoryTitle))
+                .build(plugin);
+        return this.Open(src, invX);
+    }
+
     public CommandResult Open(CommandSource src, CommandContext args, String invArch) {
-        if (invArch == "enderchest") {
-            final Player player = Tools.getPlayer(src, plugin);
+        if (Objects.equals(invArch, "enderchest")) {
+            final Player player = Tools.getPlayer(src);
             return this.Open(src, args, player.getEnderChestInventory());
         }
         return CommandResult.empty();
     }
 
     public CommandResult Open(CommandSource src, CommandContext args, InventoryArchetype invArch) {
-        final Inventory invx = org.spongepowered.api.item.inventory.Inventory.builder().of(invArch)
+        final Inventory inv = org.spongepowered.api.item.inventory.Inventory.builder().of(invArch)
                 .build(plugin);
-        return this.Open(src, args, invx);
+        return this.Open(src, args, inv);
     }
 
     public CommandResult Open(CommandSource src, CommandContext args, org.spongepowered.api.item.inventory.Inventory i) {
-        final Player player = Tools.getPlayer(src, plugin);
+        final Player player = Tools.getPlayer(src);
         if (src.getCommandSource().isPresent() && src.getCommandSource().get() instanceof Player) {
             player.openInventory(i);
             return CommandResult.success();
@@ -76,12 +88,21 @@ public class Invs {
         return CommandResult.empty();
     }
 
-    public CommandResult Open(CommandSource src, Container opencon, String inventoryTypeIn, String title) {
-        final Player player = Tools.getPlayer(src, plugin);
+    public CommandResult Open(CommandSource src, org.spongepowered.api.item.inventory.Inventory i) {
+        final Player player = Tools.getPlayer(src);
+        if (src.getCommandSource().isPresent() && src.getCommandSource().get() instanceof Player) {
+            player.openInventory(i);
+            return CommandResult.success();
+        }
+        return CommandResult.empty();
+    }
+
+    public CommandResult Open(CommandSource src, Container openCon, String inventoryTypeIn, String title) {
+        final Player player = Tools.getPlayer(src);
         final EntityPlayerMP MPlayer = (EntityPlayerMP) player;
         MPlayer.getNextWindowId();
         MPlayer.connection.sendPacket(new SPacketOpenWindow(MPlayer.currentWindowId, inventoryTypeIn, new TextComponentString(title)));
-        MPlayer.openContainer = opencon;
+        MPlayer.openContainer = openCon;
         MPlayer.openContainer.windowId = MPlayer.currentWindowId;
         MPlayer.openContainer.addListener(MPlayer);
 

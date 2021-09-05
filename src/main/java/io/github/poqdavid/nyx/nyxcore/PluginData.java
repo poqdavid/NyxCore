@@ -24,7 +24,7 @@ public class PluginData {
     public static final String id = "nyxcore";
     public static final String name = "NyxCore";
     public static final String shortName = "Nyx";
-    public static final String version = "1.0";
+    public static final String version = "1.1";
     public static final String description = "Core plugin for all of my Nyx plugins.";
     public static final String organization = "POQDavid";
     public static final String author1 = "POQDavid";
