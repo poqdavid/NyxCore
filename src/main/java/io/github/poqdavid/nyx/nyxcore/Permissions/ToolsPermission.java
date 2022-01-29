@@ -48,30 +48,4 @@ public class ToolsPermission {
     public static final String COMMAND_ENCHANTINGTABLE_POWER_13 = "NyxCore.Tools.Command.EnchantingtablePower.13";
     public static final String COMMAND_ENCHANTINGTABLE_POWER_14 = "NyxCore.Tools.Command.EnchantingtablePower.14";
     public static final String COMMAND_ENCHANTINGTABLE_POWER_15 = "NyxCore.Tools.Command.EnchantingtablePower.15";
-
-    public static final String OLD_COMMAND_ANVIL = "VirtualTool.command.anvil";
-    public static final String OLD_COMMAND_HELP = "VirtualTool.command.help";
-    public static final String OLD_COMMAND_MAIN = "VirtualTool.command.main";
-    public static final String OLD_COMMAND_ENDERCHEST = "VirtualTool.command.enderchest";
-    public static final String OLD_COMMAND_ENCHANTINGTABLE = "VirtualTool.command.enchantingtable";
-    public static final String OLD_COMMAND_WORKBENCH = "VirtualTool.command.workbench";
-
-
-    //Enchantment powers
-    public static final String OLD_COMMAND_ENCHANTINGTABLE_POWER_0 = "VirtualTool.command.enchantingtablepower.0";
-    public static final String OLD_COMMAND_ENCHANTINGTABLE_POWER_1 = "VirtualTool.command.enchantingtablepower.1";
-    public static final String OLD_COMMAND_ENCHANTINGTABLE_POWER_2 = "VirtualTool.command.enchantingtablepower.2";
-    public static final String OLD_COMMAND_ENCHANTINGTABLE_POWER_3 = "VirtualTool.command.enchantingtablepower.3";
-    public static final String OLD_COMMAND_ENCHANTINGTABLE_POWER_4 = "VirtualTool.command.enchantingtablepower.4";
-    public static final String OLD_COMMAND_ENCHANTINGTABLE_POWER_5 = "VirtualTool.command.enchantingtablepower.5";
-    public static final String OLD_COMMAND_ENCHANTINGTABLE_POWER_6 = "VirtualTool.command.enchantingtablepower.6";
-    public static final String OLD_COMMAND_ENCHANTINGTABLE_POWER_7 = "VirtualTool.command.enchantingtablepower.7";
-    public static final String OLD_COMMAND_ENCHANTINGTABLE_POWER_8 = "VirtualTool.command.enchantingtablepower.8";
-    public static final String OLD_COMMAND_ENCHANTINGTABLE_POWER_9 = "VirtualTool.command.enchantingtablepower.9";
-    public static final String OLD_COMMAND_ENCHANTINGTABLE_POWER_10 = "VirtualTool.command.enchantingtablepower.10";
-    public static final String OLD_COMMAND_ENCHANTINGTABLE_POWER_11 = "VirtualTool.command.enchantingtablepower.11";
-    public static final String OLD_COMMAND_ENCHANTINGTABLE_POWER_12 = "VirtualTool.command.enchantingtablepower.12";
-    public static final String OLD_COMMAND_ENCHANTINGTABLE_POWER_13 = "VirtualTool.command.enchantingtablepower.13";
-    public static final String OLD_COMMAND_ENCHANTINGTABLE_POWER_14 = "VirtualTool.command.enchantingtablepower.14";
-    public static final String OLD_COMMAND_ENCHANTINGTABLE_POWER_15 = "VirtualTool.command.enchantingtablepower.15";
 }

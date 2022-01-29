@@ -67,7 +67,7 @@ public class Invs {
 
     public CommandResult Open(CommandSource src, CommandContext args, String invArch) {
         if (Objects.equals(invArch, "enderchest")) {
-            final Player player = Tools.getPlayer(src);
+            final Player player = CoreTools.getPlayer(src);
             return this.Open(src, args, player.getEnderChestInventory());
         }
         return CommandResult.empty();
@@ -80,7 +80,7 @@ public class Invs {
     }
 
     public CommandResult Open(CommandSource src, CommandContext args, org.spongepowered.api.item.inventory.Inventory i) {
-        final Player player = Tools.getPlayer(src);
+        final Player player = CoreTools.getPlayer(src);
         if (src.getCommandSource().isPresent() && src.getCommandSource().get() instanceof Player) {
             player.openInventory(i);
             return CommandResult.success();
@@ -89,7 +89,7 @@ public class Invs {
     }
 
     public CommandResult Open(CommandSource src, org.spongepowered.api.item.inventory.Inventory i) {
-        final Player player = Tools.getPlayer(src);
+        final Player player = CoreTools.getPlayer(src);
         if (src.getCommandSource().isPresent() && src.getCommandSource().get() instanceof Player) {
             player.openInventory(i);
             return CommandResult.success();
@@ -98,7 +98,7 @@ public class Invs {
     }
 
     public CommandResult Open(CommandSource src, Container openCon, String inventoryTypeIn, String title) {
-        final Player player = Tools.getPlayer(src);
+        final Player player = CoreTools.getPlayer(src);
         final EntityPlayerMP MPlayer = (EntityPlayerMP) player;
         MPlayer.getNextWindowId();
         MPlayer.connection.sendPacket(new SPacketOpenWindow(MPlayer.currentWindowId, inventoryTypeIn, new TextComponentString(title)));

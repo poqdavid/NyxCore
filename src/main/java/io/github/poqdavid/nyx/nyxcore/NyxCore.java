@@ -22,10 +22,12 @@ package io.github.poqdavid.nyx.nyxcore;
 
 import com.google.inject.Inject;
 import io.github.poqdavid.nyx.nyxcore.Permissions.BackpackPermission;
+import io.github.poqdavid.nyx.nyxcore.Permissions.MarketPermission;
 import io.github.poqdavid.nyx.nyxcore.Permissions.ToolsPermission;
 import io.github.poqdavid.nyx.nyxcore.Utils.CText;
 import io.github.poqdavid.nyx.nyxcore.Utils.NCLogger;
-import io.github.poqdavid.nyx.nyxcore.Utils.Setting.NyxTools.Settings;
+import io.github.poqdavid.nyx.nyxcore.Utils.Setting.NyxMarket.NMSettings;
+import io.github.poqdavid.nyx.nyxcore.Utils.Setting.NyxTools.NTSettings;
 import org.bstats.sponge.Metrics;
 import org.slf4j.Logger;
 import org.spongepowered.api.Game;
@@ -48,7 +50,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Optional;
 
-@Plugin(id = PluginData.id, name = PluginData.name, version = PluginData.version, description = PluginData.description, url = PluginData.url, authors = {PluginData.author1})
+@Plugin(id = "nyxcore", name = "@name@", version = "@version@", description = "@description@", url = "https://github.com/poqdavid/NyxCore", authors = {"@authors@"})
 public class NyxCore {
 
     public static NyxCore nyxcore;
@@ -58,13 +60,16 @@ public class NyxCore {
     private final Path backpackDir;
     private final Path toolsDir;
     private final Path backpacksDir;
+    private final Path effectDir;
+    private final Path marketDir;
     private final PluginContainer pluginContainer;
     private final Metrics metrics;
     public NCLogger logger;
     public PermissionService permService;
     public PermissionDescription.Builder permDescBuilder;
     public Path recordsDir;
-    public Settings nytSettings;
+    public NTSettings nytSettings;
+    public NMSettings nmSettings;
     @Inject
     private Game game;
     private CommandManager cmdManager;
@@ -72,19 +77,23 @@ public class NyxCore {
     @Inject
     public NyxCore(Metrics.Factory metricsFactory, @ConfigDir(sharedRoot = true) Path path, Logger logger, PluginContainer container) {
         nyxcore = this;
-        this.dataDir = Sponge.getGame().getSavesDirectory().resolve(PluginData.id);
         this.pluginContainer = container;
+
+        this.dataDir = Sponge.getGame().getSavesDirectory().resolve(this.getPluginContainer().getId());
+
         this.logger = new NCLogger();
-        this.nytSettings = new Settings();
-        this.configDirPath = path.resolve(PluginData.shortName);
+        this.nytSettings = new NTSettings();
+        this.nmSettings = new NMSettings();
+        this.configDirPath = path.resolve("Nyx");
         this.configFullPath = Paths.get(this.getConfigPath().toString(), "config.json");
         this.backpackDir = Paths.get(this.getConfigPath().toString(), "NyxBackpack");
         this.toolsDir = Paths.get(this.getConfigPath().toString(), "NyxTools");
         this.backpacksDir = Paths.get(this.backpackDir.toString(), "backpacks");
-
+        this.effectDir = Paths.get(this.getConfigPath().toString(), "NyxEffect");
+        this.marketDir = Paths.get(this.getConfigPath().toString(), "NyxMarket");
 
         this.logger.info(" ");
-        this.logger.info(CText.get(CText.Colors.MAGENTA, 0, "NyxCore") + CText.get(CText.Colors.YELLOW, 0, " v" + PluginData.version));
+        this.logger.info(CText.get(CText.Colors.MAGENTA, 0, "@name@") + CText.get(CText.Colors.YELLOW, 0, " v" + this.getVersion()));
         this.logger.info("Starting...");
         this.logger.info(" ");
 
@@ -118,18 +127,37 @@ public class NyxCore {
     }
 
     @Nonnull
+    public Path getEffectPath() {
+        return this.effectDir;
+    }
+
+    @Nonnull
+    public Path getMarketPath() {
+        return this.marketDir;
+    }
+
+    @Nonnull
     public PluginContainer getPluginContainer() {
         return this.pluginContainer;
     }
 
     @Nonnull
     public String getVersion() {
-        return PluginData.version;
+        if (this.getPluginContainer().getVersion().isPresent()) {
+            return this.getPluginContainer().getVersion().get();
+        } else {
+            return "@version@";
+        }
     }
 
     @Nonnull
-    public Settings getToolsSettings() {
+    public NTSettings getToolsSettings() {
         return this.nytSettings;
+    }
+
+    @Nonnull
+    public NMSettings getMarketSettings() {
+        return this.nmSettings;
     }
 
     @Nonnull
@@ -154,7 +182,7 @@ public class NyxCore {
     @Listener
     public void onGamePreInit(@Nullable final GamePreInitializationEvent event) {
         this.logger.info(" ");
-        this.logger.info(CText.get(CText.Colors.MAGENTA, 0, "NyxCore") + CText.get(CText.Colors.YELLOW, 0, " v" + PluginData.version));
+        this.logger.info(CText.get(CText.Colors.MAGENTA, 0, "@name@") + CText.get(CText.Colors.YELLOW, 0, " v" + this.getVersion()));
         this.logger.info("Initializing...");
         this.logger.info(" ");
         nyxcore = this;
@@ -413,6 +441,93 @@ public class NyxCore {
                     .description(Text.of("Sets enchanting table's power to 15"))
                     .assign(PermissionDescription.ROLE_USER, true)
                     .assign(PermissionDescription.ROLE_STAFF, true)
+                    .assign(PermissionDescription.ROLE_ADMIN, true)
+                    .register();
+
+            //Market
+            this.permDescBuilder
+                    .id(MarketPermission.COMMAND_HELP)
+                    .description(Text.of("Allows the use of help command"))
+                    .assign(PermissionDescription.ROLE_USER, true)
+                    .assign(PermissionDescription.ROLE_STAFF, true)
+                    .assign(PermissionDescription.ROLE_ADMIN, true)
+                    .register();
+            this.permDescBuilder
+                    .id(MarketPermission.COMMAND_MAIN)
+                    .description(Text.of("Allows the use of /sm, /NyxMarket"))
+                    .assign(PermissionDescription.ROLE_USER, true)
+                    .assign(PermissionDescription.ROLE_STAFF, true)
+                    .assign(PermissionDescription.ROLE_ADMIN, true)
+                    .register();
+            this.permDescBuilder
+                    .id(MarketPermission.COMMAND_SELL)
+                    .description(Text.of("Allows the use of /market sell"))
+                    .assign(PermissionDescription.ROLE_USER, true)
+                    .assign(PermissionDescription.ROLE_STAFF, true)
+                    .assign(PermissionDescription.ROLE_ADMIN, true)
+                    .register();
+            this.permDescBuilder
+                    .id(MarketPermission.COMMAND_BUY)
+                    .description(Text.of("Allows the use of /market buy"))
+                    .assign(PermissionDescription.ROLE_USER, true)
+                    .assign(PermissionDescription.ROLE_STAFF, true)
+                    .assign(PermissionDescription.ROLE_ADMIN, true)
+                    .register();
+            this.permDescBuilder
+                    .id(MarketPermission.COMMAND_HISTORY)
+                    .description(Text.of("Allows the use of /market history"))
+                    .assign(PermissionDescription.ROLE_USER, false)
+                    .assign(PermissionDescription.ROLE_STAFF, true)
+                    .assign(PermissionDescription.ROLE_ADMIN, true)
+                    .register();
+            this.permDescBuilder
+                    .id(MarketPermission.COMMAND_MAIL)
+                    .description(Text.of("Allows the use of /market mail"))
+                    .assign(PermissionDescription.ROLE_USER, true)
+                    .assign(PermissionDescription.ROLE_STAFF, true)
+                    .assign(PermissionDescription.ROLE_ADMIN, true)
+                    .register();
+            this.permDescBuilder
+                    .id(MarketPermission.COMMAND_PRICECHECK)
+                    .description(Text.of("Allows the use of /market price"))
+                    .assign(PermissionDescription.ROLE_USER, true)
+                    .assign(PermissionDescription.ROLE_STAFF, true)
+                    .assign(PermissionDescription.ROLE_ADMIN, true)
+                    .register();
+            this.permDescBuilder
+                    .id(MarketPermission.COMMAND_PRICELIMIT)
+                    .description(Text.of("Allows the use of /market pricelimit"))
+                    .assign(PermissionDescription.ROLE_USER, false)
+                    .assign(PermissionDescription.ROLE_STAFF, false)
+                    .assign(PermissionDescription.ROLE_ADMIN, true)
+                    .register();
+            this.permDescBuilder
+                    .id(MarketPermission.COMMAND_RELOAD)
+                    .description(Text.of("Allows the use of /market reload"))
+                    .assign(PermissionDescription.ROLE_USER, false)
+                    .assign(PermissionDescription.ROLE_STAFF, false)
+                    .assign(PermissionDescription.ROLE_ADMIN, true)
+                    .register();
+            this.permDescBuilder
+                    .id(MarketPermission.COMMAND_SEND)
+                    .description(Text.of("Allows the use of /market send"))
+                    .assign(PermissionDescription.ROLE_USER, true)
+                    .assign(PermissionDescription.ROLE_STAFF, true)
+                    .assign(PermissionDescription.ROLE_ADMIN, true)
+                    .register();
+
+            this.permDescBuilder
+                    .id(MarketPermission.ADMIN_CANCEL)
+                    .description(Text.of("Allows the the admin to cancel market items"))
+                    .assign(PermissionDescription.ROLE_USER, false)
+                    .assign(PermissionDescription.ROLE_STAFF, false)
+                    .assign(PermissionDescription.ROLE_ADMIN, true)
+                    .register();
+            this.permDescBuilder
+                    .id(MarketPermission.COMMAND_SETTING)
+                    .description(Text.of("Allows the the admin to change settings"))
+                    .assign(PermissionDescription.ROLE_USER, false)
+                    .assign(PermissionDescription.ROLE_STAFF, false)
                     .assign(PermissionDescription.ROLE_ADMIN, true)
                     .register();
         }

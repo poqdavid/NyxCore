@@ -20,31 +20,49 @@
 
 package io.github.poqdavid.nyx.nyxcore.Utils;
 
+import com.flowpowered.math.imaginary.Quaterniond;
+import com.flowpowered.math.vector.Vector3d;
+import com.google.common.base.Charsets;
+import com.google.common.reflect.TypeToken;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import io.github.poqdavid.nyx.nyxcore.NyxCore;
-import io.github.poqdavid.nyx.nyxcore.Utils.Setting.NyxTools.Settings;
+import io.github.poqdavid.nyx.nyxcore.Utils.Setting.NyxMarket.NMSettings;
+import io.github.poqdavid.nyx.nyxcore.Utils.Setting.NyxTools.NTSettings;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.EntityPlayerMP;
+import ninja.leaping.configurate.hocon.HoconConfigurationLoader;
 import org.spongepowered.api.Server;
+import org.spongepowered.api.Sponge;
+import org.spongepowered.api.block.BlockState;
+import org.spongepowered.api.block.BlockTypes;
 import org.spongepowered.api.command.CommandException;
 import org.spongepowered.api.command.CommandSource;
 import org.spongepowered.api.data.DataContainer;
+import org.spongepowered.api.data.key.Keys;
 import org.spongepowered.api.data.persistence.DataFormats;
+import org.spongepowered.api.data.persistence.DataTranslators;
+import org.spongepowered.api.effect.particle.ParticleType;
+import org.spongepowered.api.effect.particle.ParticleTypes;
 import org.spongepowered.api.entity.living.player.Player;
 import org.spongepowered.api.entity.living.player.User;
 import org.spongepowered.api.event.cause.Cause;
 import org.spongepowered.api.item.inventory.ItemStack;
+import org.spongepowered.api.item.inventory.ItemStackSnapshot;
 import org.spongepowered.api.item.inventory.property.SlotPos;
+import org.spongepowered.api.text.Text;
+import org.spongepowered.api.world.Location;
+import org.spongepowered.api.world.World;
 
 import java.io.*;
+import java.lang.reflect.Type;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Base64;
 import java.util.Optional;
 
-public class Tools {
+public class CoreTools {
     public static boolean WriteFile(File file, String content) {
         FileWriter filew = null;
 
@@ -214,7 +232,7 @@ public class Tools {
         final File file = filePath.toFile();
 
         if (!file.exists()) {
-            if (!Tools.WriteFile(file, "{}")) {
+            if (!CoreTools.WriteFile(file, "{}")) {
                 NyxCore.getInstance().getLogger(null).error("Failed to create backpack file on player join for " + player.getName());
             }
         }
@@ -346,7 +364,7 @@ public class Tools {
         }
     }
 
-    public static void saveToJson(Path file, Settings jsonob) {
+    public static void saveToJson(Path file, NTSettings jsonob) {
         Gson gson = new GsonBuilder().setPrettyPrinting().disableHtmlEscaping().create();
 
         if (jsonob == null) {
@@ -356,7 +374,17 @@ public class Tools {
         }
     }
 
-    public static Settings loadFromJson(Path file, Settings defob) {
+    public static void saveToJson(Path file, NMSettings jsonob) {
+        Gson gson = new GsonBuilder().setPrettyPrinting().disableHtmlEscaping().create();
+
+        if (jsonob == null) {
+            WriteFile(file.toFile(), "{}");
+        } else {
+            WriteFile(file.toFile(), gson.toJson(jsonob, jsonob.getClass()));
+        }
+    }
+
+    public static NTSettings loadFromJson(Path file, NTSettings defob) {
 
         if (!Files.exists(file)) {
             try {
@@ -367,7 +395,7 @@ public class Tools {
         }
 
         Gson gson = new Gson();
-        Settings out = null;
+        NTSettings out = null;
         BufferedReader br = null;
 
         try {
@@ -386,5 +414,169 @@ public class Tools {
         }
 
         return out;
+    }
+
+    public static NMSettings loadFromJson(Path file, NMSettings defob) {
+
+        if (!Files.exists(file)) {
+            try {
+                saveToJson(file, defob);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+
+        Gson gson = new Gson();
+        NMSettings out = null;
+        BufferedReader br = null;
+
+        try {
+            br = new BufferedReader(new FileReader(file.toString()));
+            out = gson.fromJson(br, defob.getClass());
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        } finally {
+            if (br != null) {
+                try {
+                    br.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+
+        return out;
+    }
+
+    public static String serializeToJSON(BlockState items) {
+
+
+        GsonBuilder gsonBuilder = new GsonBuilder();
+
+        gsonBuilder.setPrettyPrinting();
+
+        //gsonBuilder.registerTypeAdapter(ParticleDataList.class, new InterfaceAdapter<ParticleDataList>());
+
+        Gson gson = gsonBuilder.create();
+        Type type = new TypeToken<BlockState>() {
+        }.getType();
+        return gson.toJson(items, type);
+    }
+
+    public static String serialize(DataContainer container) throws IOException {
+        try (StringWriter writer = new StringWriter()) {
+            HoconConfigurationLoader loader = HoconConfigurationLoader.builder().setSink(() -> new BufferedWriter(writer)).build();
+            loader.save(DataTranslators.CONFIGURATION_NODE.translate(container));
+            return Base64.getEncoder().encodeToString(writer.toString().getBytes(Charsets.UTF_8));
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            return null;
+        }
+    }
+
+    public static DataContainer deSerialize(String json) {
+        try (StringReader reader = new StringReader(new String(Base64.getDecoder().decode(json), Charsets.UTF_8))) {
+            return DataTranslators.CONFIGURATION_NODE.translate(HoconConfigurationLoader.builder().setSource(() -> new BufferedReader(reader)).build().load()).getContainer();
+        } catch (IOException e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+    public static ParticleType GetParticleType(String id) {
+        ParticleType pt = ParticleTypes.FIRE_SMOKE;
+        Optional<ParticleType> optpt = Sponge.getRegistry().getType(ParticleType.class, id);
+
+        if (optpt.isPresent()) {
+            pt = optpt.get();
+        }
+
+        return pt;
+    }
+
+    public static BlockState GetBlock(String id) {
+        return Sponge.getRegistry().getType(BlockState.class, id).orElse(BlockTypes.AIR.getDefaultState());
+    }
+
+
+    public static String getDirection(Player player) {
+        String playerDirection;
+        double yaw = player.getRotation().getY();
+        //World w = player.getWorld();
+        int x = player.getLocation().getBlockX();
+        int y = player.getLocation().getBlockY();
+        int z = player.getLocation().getBlockZ();
+
+        if (yaw < 0) {
+            yaw = yaw + 360;
+        }
+
+        if ((yaw >= 315) && (yaw <= 360)) {
+            playerDirection = "south";
+        } else if ((yaw >= 0) && (yaw <= 45)) {
+            playerDirection = "south";
+        } else if ((yaw >= 45) && (yaw <= 135)) {
+            playerDirection = "west";
+        } else if ((yaw >= 135) && (yaw <= 180)) {
+            playerDirection = "north";
+        } else if ((yaw >= 180) && (yaw <= 225)) {
+            playerDirection = "north";
+        } else if ((yaw >= 225) && (yaw <= 315)) {
+            playerDirection = "east";
+        } else {
+            playerDirection = "east";
+        }
+
+        return playerDirection;
+    }
+
+    public static Vector3d getBL(Player player) {
+
+        double x = player.getLocation().getX();
+        double y = player.getLocation().getY();
+        double z = player.getLocation().getZ();
+        final String playerDirection = CoreTools.getDirection(player);
+
+        if (playerDirection == "north") {
+            z = z + 1;
+        } else if (playerDirection == "east") {
+            x = x - 1;
+        } else if (playerDirection == "south") {
+            z = z - 1;
+        } else if (playerDirection == "west") {
+            x = x + 1;
+        }
+
+
+        return new Vector3d(x, y, z);
+    }
+
+    public static Location<World> GetLocation(Player player, Quaterniond Qu, Vector3d distance) {
+        final Vector3d dir = Qu.getDirection();
+        final Vector3d diff = dir.add(distance);
+        return player.getLocation().add(diff);
+    }
+
+    public static Location<World> GetLocation(Player player, Vector3d distance) {
+        final Vector3d rotation = player.getRotation();
+        return GetLocation(player, Quaterniond.fromAxesAnglesDeg(rotation.getX(), -rotation.getY(), rotation.getZ()), distance);
+    }
+
+    public static Vector3d rotateAroundAxisY(Vector3d v, double cos, double sin) {
+        double x = v.getX() * cos + v.getZ() * sin;
+        double z = v.getX() * -sin + v.getZ() * cos;
+        return new Vector3d(x, v.getY(), z);
+    }
+
+    public static ItemStack Base64ToItemStack(byte[] base64) {
+        return ItemStack.builder().fromContainer(Base64ToContainer(base64)).build();
+    }
+
+    public static Text getItemName(ItemStack itemStack) {
+        return itemStack.get(Keys.DISPLAY_NAME).orElse(Text.of(itemStack.getTranslation().get()));
+    }
+
+    public static Text getItemName(ItemStackSnapshot itemStack) {
+        return itemStack.get(Keys.DISPLAY_NAME).orElse(Text.of(itemStack.getTranslation().get()));
     }
 }

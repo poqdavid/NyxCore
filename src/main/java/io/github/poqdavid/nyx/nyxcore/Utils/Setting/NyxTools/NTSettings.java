@@ -23,7 +23,7 @@ package io.github.poqdavid.nyx.nyxcore.Utils.Setting.NyxTools;
 import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
 import io.github.poqdavid.nyx.nyxcore.NyxCore;
-import io.github.poqdavid.nyx.nyxcore.Utils.Tools;
+import io.github.poqdavid.nyx.nyxcore.Utils.CoreTools;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
@@ -32,7 +32,7 @@ import javax.validation.Valid;
 import java.io.Serializable;
 import java.nio.file.Path;
 
-public class Settings implements Serializable {
+public class NTSettings implements Serializable {
 
     private final static long serialVersionUID = 4280887333225310204L;
     @SerializedName("commands")
@@ -43,23 +43,23 @@ public class Settings implements Serializable {
     /**
      * No args constructor for use in serialization
      */
-    public Settings() {
+    public NTSettings() {
         this.setCommands(new Commands(true, true, true, true));
     }
 
-    public Settings(Commands commands) {
+    public NTSettings(Commands commands) {
         super();
         this.commands = commands;
     }
 
 
-    public Settings(Path file) {
+    public NTSettings(Path file) {
         this.Load(file);
     }
 
     public void Load(Path file) {
         try {
-            Settings sets = Tools.loadFromJson(file, new Settings());
+            NTSettings sets = CoreTools.loadFromJson(file, new NTSettings());
             NyxCore.getInstance().getLogger(null).info("Loading file: " + file.toString());
             this.setCommands(sets.getCommands());
         } catch (Exception e) {
@@ -69,7 +69,7 @@ public class Settings implements Serializable {
     }
 
     public void Save(Path file) {
-        Tools.saveToJson(file, this);
+        CoreTools.saveToJson(file, this);
     }
 
     public Commands getCommands() {
@@ -80,7 +80,7 @@ public class Settings implements Serializable {
         this.commands = commands;
     }
 
-    public Settings withCommands(Commands commands) {
+    public NTSettings withCommands(Commands commands) {
         this.commands = commands;
         return this;
     }
@@ -100,10 +100,10 @@ public class Settings implements Serializable {
         if (other == this) {
             return true;
         }
-        if (!(other instanceof Settings)) {
+        if (!(other instanceof NTSettings)) {
             return false;
         }
-        Settings rhs = ((Settings) other);
+        NTSettings rhs = ((NTSettings) other);
         return new EqualsBuilder().append(commands, rhs.commands).isEquals();
     }
 
