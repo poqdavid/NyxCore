@@ -36,6 +36,7 @@ public class EffectPermission {
     public static final String COMMAND_LIST = "NyxCore.Effect.Command.List";
 
     public static final String COMMAND_TASK_OTHER = "NyxCore.Effect.Command.TaskOther";
+    public static final String COMMAND_RELOAD = "NyxCore.Effect.Command.Reload";
 
     public static final String EFFECTS = "NyxCore.Effect.Effects";
 }
