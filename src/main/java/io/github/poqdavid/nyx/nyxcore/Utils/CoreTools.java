@@ -27,6 +27,7 @@ import com.google.common.reflect.TypeToken;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import io.github.poqdavid.nyx.nyxcore.NyxCore;
+import io.github.poqdavid.nyx.nyxcore.Permissions.BackpackPermission;
 import io.github.poqdavid.nyx.nyxcore.Utils.Setting.NyxMarket.NMSettings;
 import io.github.poqdavid.nyx.nyxcore.Utils.Setting.NyxTools.NTSettings;
 import net.minecraft.entity.player.EntityPlayer;
@@ -578,5 +579,46 @@ public class CoreTools {
 
     public static Text getItemName(ItemStackSnapshot itemStack) {
         return itemStack.get(Keys.DISPLAY_NAME).orElse(Text.of(itemStack.getTranslation().get()));
+    }
+
+    public static int getBackpackSize(User user) {
+        if (user.hasPermission(BackpackPermission.COMMAND_BACKPACK_SIZE_SIX))
+            return 6;
+        if (user.hasPermission(BackpackPermission.COMMAND_BACKPACK_SIZE_FIVE))
+            return 5;
+        if (user.hasPermission(BackpackPermission.COMMAND_BACKPACK_SIZE_FOUR))
+            return 4;
+        if (user.hasPermission(BackpackPermission.COMMAND_BACKPACK_SIZE_THREE))
+            return 3;
+        if (user.hasPermission(BackpackPermission.COMMAND_BACKPACK_SIZE_TWO))
+            return 2;
+        if (user.hasPermission(BackpackPermission.COMMAND_BACKPACK_SIZE_ONE))
+            return 1;
+        return 1;
+    }
+
+    public static int getBackpackSize(User user, Integer size) {
+        if (size == 0) {
+            if (user.hasPermission(BackpackPermission.COMMAND_BACKPACK_SIZE_SIX))
+                return 6;
+            if (user.hasPermission(BackpackPermission.COMMAND_BACKPACK_SIZE_FIVE))
+                return 5;
+            if (user.hasPermission(BackpackPermission.COMMAND_BACKPACK_SIZE_FOUR))
+                return 4;
+            if (user.hasPermission(BackpackPermission.COMMAND_BACKPACK_SIZE_THREE))
+                return 3;
+            if (user.hasPermission(BackpackPermission.COMMAND_BACKPACK_SIZE_TWO))
+                return 2;
+            if (user.hasPermission(BackpackPermission.COMMAND_BACKPACK_SIZE_ONE))
+                return 1;
+            return 1;
+        } else {
+            if (size < 6) {
+                return 6;
+            } else {
+                return size;
+            }
+        }
+
     }
 }
