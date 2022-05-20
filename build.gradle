@@ -6,20 +6,20 @@ plugins {
 
 ext {
     // General
-    project_name = "NyxCore"
-    project_id = "nyxcore"
-    project_url = "https://github.com/poqdavid/NyxCore"
-    project_organization = "POQDavid"
-    project_authors = "POQDavid"
-    project_group = "io.github.poqdavid.nyx"
-    project_description = "Core plugin for all of my Nyx plugins."
+    nyxcore_project_name = "NyxCore"
+    nyxcore_project_id = "nyxcore"
+    nyxcore_project_url = "https://github.com/poqdavid/NyxCore"
+    nyxcore_project_organization = "POQDavid"
+    nyxcore_project_authors = "POQDavid"
+    nyxcore_project_group = "io.github.poqdavid.nyx"
+    nyxcore_project_description = "Core plugin for all of my Nyx plugins."
 
     // Version'z
-    project_test = "tdfsg"
-    project_major = "1"
-    project_minor = "7"
-    project_api = "Sponge-7.4"
-    project_suffix = "STABLE"
+    nyxcore_project_test = "tdfsg"
+    nyxcore_project_major = "1"
+    nyxcore_project_minor = "7"
+    nyxcore_project_api = "Sponge-7.4"
+    nyxcore_project_suffix = "STABLE"
 
     // Dependencies
     spongeapi = "7.4.0"
@@ -37,8 +37,8 @@ sourceCompatibility = '1.8'
 targetCompatibility = '1.8'
 
 allprojects {
-    group = "$project_group" as Object
-    description = "$project_description"
+    group = "$nyxcore_project_group" as Object
+    description = "$nyxcore_project_description"
 }
 
 subprojects {

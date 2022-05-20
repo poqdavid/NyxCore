@@ -45,16 +45,16 @@ applyPlugin('net.kyori.blossom')
 sourceCompatibility = '1.8'
 targetCompatibility = '1.8'
 
-version = "$minecraft_version-$project_major.$project_minor-$project_api-$project_suffix" as Object
+version = "$minecraft_version-$nyxcore_project_major.$nyxcore_project_minor-$nyxcore_project_api-$nyxcore_project_suffix" as Object
 
 blossom {
-    replaceToken("@version@", "$project_major.$project_minor")
-    replaceToken("@description@", "$project_description")
-    replaceToken("@id@", "$project_id")
-    replaceToken("@name@", "$project_name")
-    replaceToken("@organization@", "$project_organization")
-    replaceToken("@authors@", "$project_authors")
-    replaceToken("@url@", "$project_url")
+    replaceToken("@version@", "$nyxcore_project_major.$nyxcore_project_minor")
+    replaceToken("@description@", "$nyxcore_project_description")
+    replaceToken("@id@", "$nyxcore_project_id")
+    replaceToken("@name@", "$nyxcore_project_name")
+    replaceToken("@organization@", "$nyxcore_project_organization")
+    replaceToken("@authors@", "$nyxcore_project_authors")
+    replaceToken("@url@", "$nyxcore_project_url")
 }
 
 if (System.getenv().BUILD_NUMBER != null) {
@@ -135,7 +135,7 @@ shadowJar {
     version = project.version
     configurations = [project.configurations.shadow]
 
-    relocate "org.bstats", "io.github.poqdavid.nyx.${project_id}.shaded.bstats"
+    relocate "org.bstats", "io.github.poqdavid.nyx.${nyxcore_project_id}.shaded.bstats"
 
     archiveName("${rootProject.name}-${project.version}.jar")
 
@@ -156,9 +156,9 @@ license {
     header = file('../HEADER.txt')
     newLine = true
     ext {
-        name = "$project_name"
-        organization = "$project_organization"
-        url = "$project_url"
+        name = "$nyxcore_project_name"
+       organization = "$nyxcore_project_organization"
+        url = "$nyxcore_project_url"
     }
     include '**/*.java'
     include '**/*.groovy'
@@ -166,16 +166,16 @@ license {
 
 processResources {
     // this will ensure that this task is redone when the versions change.
-    inputs.property "version", "$project_major.$project_minor"
+    inputs.property "version", "$nyxcore_project_major.$nyxcore_project_minor"
     inputs.property "mcversion", "$minecraft_version"
-    inputs.property "modid", "$project_id"
-    inputs.property "description", "$project_description"
+    inputs.property "modid", "$nyxcore_project_id"
+    inputs.property "description", "$nyxcore_project_description"
     // replace stuff in mcmod.info, nothing else
     from(sourceSets.main.resources.srcDirs) {
         include "mcmod.info"
 
         // replace version and mcversion
-        expand 'version': "$project_major.$project_minor", 'mcversion': "$minecraft_version"
+        expand 'version': "$nyxcore_project_major.$nyxcore_project_minor", 'mcversion': "$minecraft_version"
     }
 
     // copy everything else, thats not the mcmod.info
@@ -186,9 +186,14 @@ processResources {
 }
 
 task copyJar(type: Copy) {
-    from jar.archiveFile
-    into 'C:/Minecraft/Servers/Sponge/mods'
-    project.logger.log(LogLevel.WARN, "Copied file: ${jar.archiveFile}")
+    def dir = new File('C:/Minecraft/Servers/Sponge/mods')
+    if(dir.exists()) {
+        from jar.archiveFile
+        into "${dir}"
+        project.logger.log(LogLevel.WARN, "Copied file: ${jar.archiveFile}")
+    }else {
+        project.logger.log(LogLevel.WARN, "Destination Dir: ${dir} Doesn't exists!!")
+    }
 }
 
 artifacts {

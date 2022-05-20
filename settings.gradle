@@ -1,2 +1,13 @@
 rootProject.name = 'NyxCore'
 include ('nyxcore-common', 'nyxcore-sponge', 'nyxcore-forge')
+
+includeBuild("../NyxEffect") {
+    dependencySubstitution {
+        substitute(module("io.github.poqdavid.nyx:nyxcore-sponge"))
+                .with(project(":nyxcore-sponge"))
+        substitute(module("io.github.poqdavid.nyx:nyxcore-forge"))
+                .with(project(":nyxcore-forge"))
+        substitute(module("io.github.poqdavid.nyx:nyxcore-common"))
+                .with(project(":nyxcore-common"))
+    }
+}
